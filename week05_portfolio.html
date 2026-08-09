@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SN — AI Engineer & Full-Stack Developer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  background:#020914;color:#f5f7fb;line-height:1.6;
+  overflow-x:hidden;
+}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+  background:
+    radial-gradient(circle at 20% 15%,rgba(30,100,255,.12),transparent 28%),
+    radial-gradient(circle at 80% 55%,rgba(104,50,255,.10),transparent 30%);
+}
+a{text-decoration:none;color:inherit}
+button,input,textarea{font:inherit}
+.container{width:min(1180px,90%);margin:auto}
+
+/* Navigation */
+nav{
+  height:72px;border-bottom:1px solid #142235;background:rgba(2,9,20,.92);
+  backdrop-filter:blur(12px);display:flex;align-items:center;position:sticky;top:0;z-index:50;
+}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;width:100%}
+.logo{font-size:21px;font-weight:800;color:#60a5fa}
+.nav-links{display:flex;gap:28px;font-size:14px;color:#c0caf5}
+.nav-links a{padding:8px 0;position:relative;transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:#fff}
+.nav-links a.active:after{
+  content:"";position:absolute;bottom:-2px;left:0;right:0;height:2px;
+  background:#3b82f6
+}
+.cta{
+  background:linear-gradient(135deg,#2563eb,#304bd8);border:0;color:white;
+  padding:11px 22px;border-radius:6px;font-weight:600;cursor:pointer;
+  box-shadow:0 8px 25px rgba(37,99,235,.2);display:inline-block;text-align:center;
+}
+
+section{padding:60px 0}
+.hero{min-height:calc(100vh - 72px);display:flex;align-items:center}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+.badge{
+  display:inline-block;border:1px solid #263750;background:#071321;color:#b3d0ff;
+  border-radius:20px;padding:6px 14px;font-size:13px;margin-bottom:18px
+}
+h1{font-size:clamp(28px, 4.5vw, 56px);line-height:1.15;letter-spacing:-1px}
+.gradient{
+  background:linear-gradient(90deg,#60a5fa,#8b5cf6);-webkit-background-clip:text;
+  background-clip:text;color:transparent
+}
+.hero p{margin:20px 0;color:#c2d0e0;max-width:620px;font-size:15px;line-height:1.6}
+.actions{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.secondary{
+  border:1px solid #314052;background:#07111e;color:#e6edf7;padding:10px 20px;
+  border-radius:6px;display:inline-block;
+}
+
+.route-visual{
+  height:360px;border:1px solid #1d3048;border-radius:12px;position:relative;overflow:hidden;
+  background:
+    linear-gradient(25deg,transparent 48%,rgba(45,91,140,.12) 49%,transparent 50%),
+    linear-gradient(155deg,transparent 48%,rgba(45,91,140,.12) 49%,transparent 50%),
+    #06111d;
+  width:100%;
+}
+.route-visual:before,.route-visual:after{
+  content:"";position:absolute;inset:-30%;background-image:
+  linear-gradient(#18314a 1px,transparent 1px),
+  linear-gradient(90deg,#18314a 1px,transparent 1px);
+  background-size:55px 55px;transform:rotate(12deg);opacity:.45
+}
+.route{position:absolute;width:75%;height:4px;background:linear-gradient(90deg,#22d3ee,#6366f1,#22c55e);
+  transform:rotate(-23deg);left:10%;top:51%;box-shadow:0 0 18px #397cff;z-index:2}
+.pin{position:absolute;width:25px;height:25px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+  background:#3b82f6;z-index:3;box-shadow:0 0 20px #3b82f6}
+.pin span{display:block;width:9px;height:9px;background:#06111d;border-radius:50%;margin:8px}
+.pin.one{left:18%;top:62%}.pin.two{right:19%;top:30%;background:#34d399;box-shadow:0 0 20px #34d399}
+.route-card{
+  position:absolute;right:20px;top:20px;width:180px;padding:16px;border:1px solid #2a4059;
+  border-radius:9px;background:rgba(4,14,26,.95);z-index:4
+}
+.route-card h3{font-size:14px;margin-bottom:10px;color:#fff}.route-card li{list-style:none;color:#b0c0d8;font-size:12px;margin:6px 0}
+
+.stats{margin-top:28px;border:1px solid #172a40;border-radius:9px;background:#06111d;display:grid;grid-template-columns:1fr 1fr}
+.stat{padding:16px 20px;border-right:1px solid #172a40}.stat:last-child{border:0}
+.stat small{display:block;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}.stat strong{font-size:13px;color:#e2e8f0;word-break:break-word}
+
+.section-title{margin-bottom:30px}.section-title h2{font-size:clamp(26px, 4vw, 36px)}.section-title p{color:#a0aec0;margin-top:6px}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:20px}
+.card{
+  border:1px solid #1b2b40;background:linear-gradient(145deg,#071321,#050e19);
+  border-radius:9px;overflow:hidden;transition:.25s
+}
+.card:hover{transform:translateY(-4px);border-color:#315d96}
+.project-img{height:140px;background:#0b1827;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.map{
+  width:85%;height:70%;border:1px solid #31506d;border-radius:5px;
+  background:linear-gradient(25deg,transparent 48%,#294763 49%,transparent 50%),
+             linear-gradient(150deg,transparent 48%,#294763 49%,transparent 50%)
+}
+.map-line{width:65%;height:4px;background:#3b82f6;transform:rotate(-18deg);box-shadow:0 0 12px #3b82f6}
+.agent-icon{font-size:36px;letter-spacing:2px}
+.card-body{padding:18px}.card h3{font-size:16px;margin-bottom:8px;color:#fff}.card p{font-size:13px;color:#b0c0d8;min-height:48px;line-height:1.5}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}.tag{font-size:11px;padding:4px 8px;border-radius:4px;background:#0e2238;color:#9ec5f8;border:1px solid #1d3552}
+.card-actions{display:flex;gap:8px}.small-btn{font-size:12px;padding:8px 14px;border-radius:5px;border:1px solid #304359;display:inline-block}.live{background:#2563eb;border-color:#2563eb;color:#fff}
+
+.about-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:20px}
+.panel{border:1px solid #1b2b40;background:#06111d;border-radius:9px;padding:22px}
+.panel h3{margin-bottom:14px;font-size:18px;color:#fff}.panel p{color:#b0c0d8;font-size:14px;line-height:1.6}
+.skills{display:flex;gap:8px;flex-wrap:wrap}.skill{background:#102033;border:1px solid #1d334b;padding:6px 11px;border-radius:5px;font-size:12px;color:#d0e0f8}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:20px;margin-top:20px}
+.cert{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border:1px solid #182c42;border-radius:7px;margin-bottom:10px;background:#081626}
+.cert b{font-size:13px;color:#fff}.cert span{font-size:11px;color:#a0aec0}
+.download{text-align:center;margin-top:30px}
+
+.contact-grid{display:grid;grid-template-columns:0.9fr 1.1fr;gap:35px}
+.contact-info h2{font-size:clamp(28px, 4vw, 42px);margin-bottom:12px}.contact-info>p{color:#a0aec0;margin-bottom:25px}
+.contact-item{display:flex;gap:14px;align-items:center;margin:18px 0}.contact-icon{font-size:20px;width:30px;text-align:center;color:#60a5fa}.contact-item small{display:block;color:#8090a6;font-size:11px;text-transform:uppercase}.contact-item span{font-size:14px;color:#e2e8f0;word-break:break-all}
+.contact-item a{color:#60a5fa;text-decoration:underline;text-underline-offset:3px}
+.form{border:1px solid #1b2d43;background:#06111d;border-radius:10px;padding:24px}
+.form label{font-size:13px;display:block;margin-bottom:6px;color:#cbd5e1}
+.form input,.form textarea{
+  width:100%;background:#081522;border:1px solid #20354d;color:white;border-radius:6px;
+  padding:12px;margin-bottom:16px;outline:none;font-size:14px;
+}
+.form input:focus,.form textarea:focus{border-color:#3579d7}.form textarea{height:130px;resize:vertical}
+.form button{width:100%}
+
+footer{border-top:1px solid #142235;padding:25px 0;text-align:center;color:#8090a6;font-size:13px}
+
+/* Mobile Responsiveness Improvements */
+@media(max-width:850px){
+  .hero-grid,.contact-grid{grid-template-columns:1fr}
+  .hero{padding:40px 0}
+  .route-visual{height:300px}
+}
+
+@media(max-width:600px){
+  nav{height:auto;padding:14px 0}
+  .nav-inner{flex-direction:column;gap:12px;align-items:flex-start}
+  .nav-links{width:100%;justify-content:space-between;gap:8px;font-size:13px;border-top:1px solid #142235;padding-top:10px}
+  .nav-inner>.cta{display:none}
+  .stats{grid-template-columns:1fr}
+  .stat{border-right:0;border-bottom:1px solid #172a40}
+  .actions{flex-direction:column;width:100%}
+  .actions a{width:100%;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container nav-inner">
+    <a href="#home" class="logo">SN</a>
+    <div class="nav-links">
+      <a href="#home" class="active">Home</a>
+      <a href="#projects">Projects</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <a href="#contact" class="cta">Let's Connect</a>
+  </div>
+</nav>
+
+<main>
+<section id="home" class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="badge">✦ AI Engineer & Full-Stack Developer</span>
+      <h1>I build full-stack AI systems — <span class="gradient">from pathfinding algorithms and LLM-powered agents to automated workflows</span> — turning real problems into working software.</h1>
+      <p>Software Engineering student at CUST with hands-on experience building AI agents, automation workflows, and intelligent applications.</p>
+      <div class="actions">
+        <a class="cta" href="#projects">View My Work</a>
+        <a class="secondary" href="Resume_Najam.pdf" download>↓ Download Resume</a>
+      </div>
+      <div class="stats">
+        <div class="stat"><small>Tech Stack</small><strong>Python · React · n8n · LLMs · Flask</strong></div>
+        <div class="stat"><small>Certifications</small><strong>Anthropic Academy · 15+ Completed</strong></div>
+      </div>
+    </div>
+    <div class="route-visual">
+      <div class="route"></div>
+      <div class="pin one"><span></span></div>
+      <div class="pin two"><span></span></div>
+      <div class="route-card">
+        <h3>AI Route Planner</h3>
+        <ul><li>✓ Dijkstra / A*</li><li>✓ Real Map Data</li><li>✓ Optimal Routes</li></ul>
+        <div style="height:50px;margin-top:10px;border-bottom:2px solid #3875e6;clip-path:polygon(0 80%,15% 60%,30% 72%,45% 30%,60% 50%,78% 20%,100% 35%,100% 100%,0 100%);background:rgba(59,130,246,.1)"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="projects">
+  <div class="container">
+    <div class="section-title"><h2>My Projects</h2><p>A collection of AI-powered systems and full-stack applications.</p></div>
+    <div class="projects-grid">
+      <article class="card">
+        <div class="project-img"><div class="map"><div class="map-line"></div></div></div>
+        <div class="card-body"><h3>AI Route Planner</h3><p>Dijkstra/A* on real map data using Flask, OSMnx & Leaflet.js.</p><div class="tags"><span class="tag">Python</span><span class="tag">Flask</span><span class="tag">OSMnx</span></div><div class="card-actions"><a class="small-btn live" href="https://github.com/Assistantnajam/AI_Route_Planner" target="_blank" rel="noopener">◯ GitHub</a></div></div>
+      </article>
+      <article class="card">
+        <div class="project-img"><div class="agent-icon">✉️ → ⚙️ → 🧠</div></div>
+        <div class="card-body"><h3>Email Agent</h3><p>n8n + Groq LLM email automation with Gmail integration.</p><div class="tags"><span class="tag">n8n</span><span class="tag">Groq</span><span class="tag">Gmail</span></div><div class="card-actions"><a class="small-btn live" href="https://github.com/Assistantnajam/Email_agent" target="_blank" rel="noopener">◯ GitHub</a></div></div>
+      </article>
+      <article class="card">
+        <div class="project-img"><div class="agent-icon">📦 → 🗃️</div></div>
+        <div class="card-body"><h3>Inventory Agent</h3><p>Conversational LLM agent with Airtable integration.</p><div class="tags"><span class="tag">LLM</span><span class="tag">Airtable</span><span class="tag">Agent</span></div><div class="card-actions"><a class="small-btn live" href="https://github.com/Assistantnajam/Inventory_agent" target="_blank" rel="noopener">◯ GitHub</a></div></div>
+      </article>
+      <article class="card">
+        <div class="project-img"><div class="agent-icon">🎙️</div></div>
+        <div class="card-body"><h3>Jarvis Virtual Assistant</h3><p>Voice-controlled NLP assistant built with Python.</p><div class="tags"><span class="tag">Python</span><span class="tag">NLP</span></div><div class="card-actions"><a class="small-btn live" href="https://github.com/Assistantnajam/Jarvis_Virtualassistant_project" target="_blank" rel="noopener">◯ GitHub</a></div></div>
+      </article>
+      <article class="card">
+        <div class="project-img"><div class="agent-icon">💬</div></div>
+        <div class="card-body"><h3>AI Chatbot</h3><p>Conversational NLP query handler built with Python.</p><div class="tags"><span class="tag">Python</span><span class="tag">NLP</span></div><div class="card-actions"><a class="small-btn live" href="https://github.com/Assistantnajam/AI_chatbot_Project" target="_blank" rel="noopener">◯ GitHub</a></div></div>
+      </article>
+      <article class="card">
+        <div class="project-img"><div class="agent-icon">🎓</div></div>
+        <div class="card-body"><h3>Web Application Development with AI</h3><p>FlyRank capstone-track full-stack project.</p><div class="tags"><span class="tag">Full Stack</span><span class="tag">AI</span></div><div class="card-actions"><a class="small-btn live" href="https://github.com/Assistantnajam/flyrank_project" target="_blank" rel="noopener">◯ GitHub</a></div></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="container">
+    <div class="section-title"><h2>About Me</h2><p>Skills, education, certifications and experience.</p></div>
+    <div class="about-grid">
+      <div class="panel"><h3>About Me</h3><p>I'm a Software Engineering student at CUST and a FlyRank AI intern passionate about building intelligent systems that solve real-world problems.</p></div>
+      <div class="panel"><h3>Skills</h3><div class="skills"><span class="skill">Python</span><span class="skill">C++</span><span class="skill">JavaScript</span><span class="skill">Flask</span><span class="skill">React</span><span class="skill">n8n</span><span class="skill">LLMs / Groq</span><span class="skill">NLP</span><span class="skill">OOP</span><span class="skill">Data Structures</span><span class="skill">Git</span><span class="skill">REST APIs</span></div></div>
+      <div class="panel"><h3>Certifications</h3><div class="cert"><b>◉ Anthropic Academy</b><span>AI Engineering</span></div><div class="cert"><b>15+</b><span>Completed Certifications</span></div></div>
+    </div>
+    <div class="info-grid">
+      <div class="panel"><h3>Education</h3><p><strong style="color:#fff">CUST — Capital University of Science & Technology</strong><br>BS Software Engineering<br><br>◷ 6th Semester</p></div>
+      <div class="panel"><h3>Volunteer Experience</h3><p><strong style="color:#fff">Junior Jinnah Trust</strong><br>Volunteer<br><br>Contributed to community welfare initiatives and awareness programs.</p></div>
+    </div>
+    <div class="download"><a href="Resume_Najam.pdf" download class="cta">↓ Download Resume</a></div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="container contact-grid">
+    <div class="contact-info">
+      <h2>Let's Connect</h2>
+      <p>I'm always open to new opportunities and exciting collaborations.</p>
+      <div class="contact-item"><div class="contact-icon">✉</div><div><small>Email</small><span><a href="mailto:syednajam.b001@gmail.com">syednajam.b001@gmail.com</a></span></div></div>
+      <div class="contact-item"><div class="contact-icon">in</div><div><small>LinkedIn</small><span><a href="https://www.linkedin.com/in/syed-najam-hassan" target="_blank" rel="noopener">linkedin.com/in/syed-najam-hassan</a></span></div></div>
+      <div class="contact-item"><div class="contact-icon">◉</div><div><small>GitHub</small><span><a href="https://github.com/Assistantnajam" target="_blank" rel="noopener">github.com/Assistantnajam</a></span></div></div>
+    </div>
+    <form class="form" onsubmit="sendMessage(event)">
+      <label>Name</label><input id="name" type="text" placeholder="Your name" required>
+      <label>Email</label><input id="email" type="email" placeholder="Your email" required>
+      <label>Message</label><textarea id="message" placeholder="Your message" required></textarea>
+      <button class="cta" type="submit">➤ Send Message</button>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer>© 2026 SN — AI Engineer & Full-Stack Developer</footer>
+
+<script>
+const links=document.querySelectorAll('.nav-links a');
+const sections=[...document.querySelectorAll('section[id]')];
+window.addEventListener('scroll',()=>{
+  let current='home';
+  sections.forEach(s=>{if(window.scrollY>=s.offsetTop-150) current=s.id});
+  links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+current));
+});
+function sendMessage(e){
+  e.preventDefault();
+  const name=document.getElementById('name').value.trim();
+  const email=document.getElementById('email').value.trim();
+  const message=document.getElementById('message').value.trim();
+  const subject=encodeURIComponent(`Portfolio Contact from ${name}`);
+  const body=encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`);
+  window.location.href=`mailto:syednajam.b001@gmail.com?subject=${subject}&body=${body}`;
+}
+</script>
+</body>
+</html>
