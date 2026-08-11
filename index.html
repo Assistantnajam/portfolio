@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SN — AI Engineer & Full-Stack Developer</title>
+
+<!-- EmailJS SDK Integration -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script type="text/javascript">
+  (function(){
+    // IMPORTANT: Replace 'YOUR_PUBLIC_KEY' with your actual EmailJS Public Key
+    emailjs.init("YtT10oeBODCKykgwk");
+  })();
+</script>
+
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -132,6 +142,12 @@ h1{font-size:clamp(28px, 4.5vw, 56px);line-height:1.15;letter-spacing:-1px}
 .form input:focus,.form textarea:focus{border-color:#3579d7}.form textarea{height:130px;resize:vertical}
 .form button{width:100%}
 
+#form-status{
+  margin-top:12px;font-size:13px;text-align:center;display:none;
+}
+#form-status.success{color:#34d399;display:block;}
+#form-status.error{color:#f87171;display:block;}
+
 footer{border-top:1px solid #142235;padding:25px 0;text-align:center;color:#8090a6;font-size:13px}
 
 /* Mobile Responsiveness Improvements */
@@ -254,11 +270,12 @@ footer{border-top:1px solid #142235;padding:25px 0;text-align:center;color:#8090
       <div class="contact-item"><div class="contact-icon">in</div><div><small>LinkedIn</small><span><a href="https://www.linkedin.com/in/syed-najam-hassan" target="_blank" rel="noopener">linkedin.com/in/syed-najam-hassan</a></span></div></div>
       <div class="contact-item"><div class="contact-icon">◉</div><div><small>GitHub</small><span><a href="https://github.com/Assistantnajam" target="_blank" rel="noopener">github.com/Assistantnajam</a></span></div></div>
     </div>
-    <form class="form" onsubmit="sendMessage(event)">
-      <label>Name</label><input id="name" type="text" placeholder="Your name" required>
-      <label>Email</label><input id="email" type="email" placeholder="Your email" required>
-      <label>Message</label><textarea id="message" placeholder="Your message" required></textarea>
-      <button class="cta" type="submit">➤ Send Message</button>
+    <form class="form" id="contact-form" onsubmit="sendMessage(event)">
+      <label>Name</label><input id="name" name="user_name" type="text" placeholder="Your name" required>
+      <label>Email</label><input id="email" name="user_email" type="email" placeholder="Your email" required>
+      <label>Message</label><textarea id="message" name="message" placeholder="Your message" required></textarea>
+      <button class="cta" id="submit-btn" type="submit">➤ Send Message</button>
+      <p id="form-status"></p>
     </form>
   </div>
 </section>
@@ -274,14 +291,33 @@ window.addEventListener('scroll',()=>{
   sections.forEach(s=>{if(window.scrollY>=s.offsetTop-150) current=s.id});
   links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+current));
 });
+
 function sendMessage(e){
   e.preventDefault();
-  const name=document.getElementById('name').value.trim();
-  const email=document.getElementById('email').value.trim();
-  const message=document.getElementById('message').value.trim();
-  const subject=encodeURIComponent(`Portfolio Contact from ${name}`);
-  const body=encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`);
-  window.location.href=`mailto:syednajam.b001@gmail.com?subject=${subject}&body=${body}`;
+  
+  const submitBtn = document.getElementById('submit-btn');
+  const statusMsg = document.getElementById('form-status');
+  
+  submitBtn.innerText = "Sending...";
+  submitBtn.disabled = true;
+  statusMsg.className = "";
+  statusMsg.innerText = "";
+
+  // IMPORTANT: Replace 'YOUR_SERVICE_ID' and 'YOUR_TEMPLATE_ID' with your EmailJS IDs
+  emailjs.sendForm('service_1y8xwwl', 'template_jsydg6k', '#contact-form')
+    .then(() => {
+      submitBtn.innerText = "➤ Send Message";
+      submitBtn.disabled = false;
+      statusMsg.className = "success";
+      statusMsg.innerText = "Message sent successfully!";
+      document.getElementById('contact-form').reset();
+    }, (error) => {
+      submitBtn.innerText = "➤ Send Message";
+      submitBtn.disabled = false;
+      statusMsg.className = "error";
+      statusMsg.innerText = "Failed to send message. Please try again.";
+      console.error('EmailJS Error:', error);
+    });
 }
 </script>
 </body>
