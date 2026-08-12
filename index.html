@@ -195,6 +195,7 @@ footer{border-top:1px solid #142235;padding:25px 0;text-align:center;color:#8090
 }
 </style>
 </head>
+
 <body>
 
 <nav>
@@ -505,5 +506,87 @@ function sendMessage(e){
   render(performance.now());
 })();
 </script>
+
+<!-- Floating AI Assistant Widget -->
+  <div id="ai-widget-container">
+    <button id="ai-toggle-btn" aria-label="Open AI Assistant">
+      💬 Chat with Najam's AI
+    </button>
+
+    <div id="ai-chat-box" class="hidden" role="region" aria-live="polite">
+      <div class="ai-chat-header">
+        <span>Najam's AI Agent</span>
+        <button id="ai-close-btn" aria-label="Close Chat">&times;</button>
+      </div>
+      <div id="ai-messages-list">
+        <div class="message bot">Hi! I'm Najam's AI assistant. Ask me anything about his skills, projects, or experience!</div>
+      </div>
+      <form id="ai-chat-form">
+        <input type="text" id="ai-user-input" placeholder="Ask something..." required />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <style>
+    #ai-widget-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: sans-serif; }
+    #ai-toggle-btn { background: #2563eb; color: #fff; border: none; padding: 12px 18px; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    #ai-chat-box { position: absolute; bottom: 60px; right: 0; width: 320px; height: 400px; background: #1e1e2e; color: #fff; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    #ai-chat-box.hidden { display: none; }
+    .ai-chat-header { background: #0f172a; padding: 12px; display: flex; justify-content: space-between; font-weight: bold; }
+    .ai-chat-header button { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
+    #ai-messages-list { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .message { padding: 8px 12px; border-radius: 8px; font-size: 14px; max-width: 80%; }
+    .message.bot { background: #334155; align-self: flex-start; }
+    .message.user { background: #2563eb; align-self: flex-end; }
+    #ai-chat-form { display: flex; padding: 8px; background: #0f172a; }
+    #ai-chat-form input { flex: 1; padding: 8px; border: none; border-radius: 4px; outline: none; }
+    #ai-chat-form button { background: #2563eb; color: #fff; border: none; padding: 8px 12px; margin-left: 6px; border-radius: 4px; cursor: pointer; }
+  </style>
+
+  <script>
+    const toggleBtn = document.getElementById('ai-toggle-btn');
+    const closeBtn = document.getElementById('ai-close-btn');
+    const chatBox = document.getElementById('ai-chat-box');
+    const chatForm = document.getElementById('ai-chat-form');
+    const userInput = document.getElementById('ai-user-input');
+    const messagesList = document.getElementById('ai-messages-list');
+
+    toggleBtn.addEventListener('click', () => chatBox.classList.toggle('hidden'));
+    closeBtn.addEventListener('click', () => chatBox.classList.add('hidden'));
+
+    function appendMessage(text, sender) {
+      const msgDiv = document.createElement('div');
+      msgDiv.classList.add('message', sender);
+      msgDiv.textContent = text;
+      messagesList.appendChild(msgDiv);
+      messagesList.scrollTop = messagesList.scrollHeight;
+    }
+
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = userInput.value.trim();
+      if (!text) return;
+
+      appendMessage(text, 'user');
+      userInput.value = '';
+
+      appendMessage('Thinking...', 'bot');
+      const loadingMsg = messagesList.lastElementChild;
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+
+        const data = await response.json();
+        loadingMsg.textContent = data.reply || "Sorry, I couldn't retrieve an answer.";
+      } catch (err) {
+        loadingMsg.textContent = "Error connecting to AI backend.";
+      }
+    });
+  </script>
 </body>
 </html>
