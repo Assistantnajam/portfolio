@@ -22,7 +22,7 @@ The performance and accessibility metrics were evaluated using Chrome DevTools (
 | **SEO** | **90** | 80 | 90+ | ✅ PASS |
 
 ### Audit Proof Screenshot
-![Lighthouse Audit Scores](lighthouse-audit.png)
+![Lighthouse Audit Scores](lighthouse-audit.jpeg)
 
 ---
 
