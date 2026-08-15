@@ -3,12 +3,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Expect an array of past messages or fallback to single string
   const { messages, message } = req.body;
-
   const conversationHistory = Array.isArray(messages)
     ? messages
     : [{ role: 'user', content: message }];
+
+  // Set SSE Headers for Streaming
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
 
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -23,23 +26,59 @@ export default async function handler(req, res) {
           {
             role: 'system',
             content: `You are Najam's AI Assistant on his personal portfolio. Answer questions about Syed Najam Ul Hassan using these details:
-            - Education: BS Software Engineering at CUST (6th Semester).
-            - Tech Stack: Python, C++, JavaScript, React, Flask, n8n, LLMs / Groq, NLP, REST APIs.
+            - Education: BS Software Engineering at CUST.
+            - Tech Stack: Python, React, Flask, n8n, LLMs, C++, JavaScript.
             - Experience: AI & Frontend Intern at FlyRank, Generative AI Intern at Arch Technologies.
-            - Projects: AI Route Planner (Dijkstra/A*), Email Agent (n8n + Groq), Inventory Agent (Airtable + LLM), Jarvis Voice Assistant, AI Chatbot, FlyRank AI Web Application.
-            Keep responses helpful, brief, interactive, and professional.`
+            - Projects: AI Route Planner, Email Agent, Inventory Agent, Jarvis Voice Assistant, AI Chatbot, FlyRank AI Web Application.
+            Keep responses helpful, brief, and professional.`
           },
           ...conversationHistory
         ],
         temperature: 0.7,
+        stream: true, // Enable Streaming
       }),
     });
 
-    const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content || "Sorry, I couldn't process that.";
+    if (!response.ok) {
+      res.write(`data: ${JSON.stringify({ error: 'Groq API request failed' })}\n\n`);
+      return res.end();
+    }
 
-    res.status(200).json({ reply });
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n').filter((line) => line.trim() !== '');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const dataStr = line.replace('data: ', '').trim();
+          if (dataStr === '[DONE]') {
+            res.write('data: [DONE]\n\n');
+            return res.end();
+          }
+
+          try {
+            const parsed = JSON.parse(dataStr);
+            const content = parsed.choices?.[0]?.delta?.content || '';
+            if (content) {
+              res.write(`data: ${JSON.stringify({ content })}\n\n`);
+            }
+          } catch (e) {
+            // Ignore partial chunk parse errors
+          }
+        }
+      }
+    }
+
+    res.write('data: [DONE]\n\n');
+    res.end();
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch AI response' });
+    res.write(`data: ${JSON.stringify({ error: 'Failed to fetch AI response' })}\n\n`);
+    res.end();
   }
 }

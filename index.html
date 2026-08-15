@@ -521,28 +521,13 @@ function sendMessage(e){
       <div id="ai-messages-list">
         <div class="message bot">Hi! I'm Najam's AI assistant. Ask me anything about his skills, projects, or experience!</div>
       </div>
-      <form id="ai-chat-form">
+      <form id="ai-chat-form" class="ai-input-container">
         <input type="text" id="ai-user-input" placeholder="Ask something..." required />
-        <button type="submit">Send</button>
+        <button type="submit" id="ai-send-btn">Send</button>
+        <button type="button" id="ai-stop-btn" style="display: none; background-color: #ef4444;">Stop</button>
       </form>
     </div>
   </div>
-
-  <style>
-    #ai-widget-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: sans-serif; }
-    #ai-toggle-btn { background: #2563eb; color: #fff; border: none; padding: 12px 18px; border-radius: 25px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    #ai-chat-box { position: absolute; bottom: 60px; right: 0; width: 320px; height: 400px; background: #1e1e2e; color: #fff; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
-    #ai-chat-box.hidden { display: none; }
-    .ai-chat-header { background: #0f172a; padding: 12px; display: flex; justify-content: space-between; font-weight: bold; }
-    .ai-chat-header button { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
-    #ai-messages-list { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-    .message { padding: 8px 12px; border-radius: 8px; font-size: 14px; max-width: 80%; }
-    .message.bot { background: #334155; align-self: flex-start; }
-    .message.user { background: #2563eb; align-self: flex-end; }
-    #ai-chat-form { display: flex; padding: 8px; background: #0f172a; }
-    #ai-chat-form input { flex: 1; padding: 8px; border: none; border-radius: 4px; outline: none; }
-    #ai-chat-form button { background: #2563eb; color: #fff; border: none; padding: 8px 12px; margin-left: 6px; border-radius: 4px; cursor: pointer; }
-  </style>
 
   <script>
   const toggleBtn = document.getElementById('ai-toggle-btn');
@@ -551,9 +536,11 @@ function sendMessage(e){
   const chatForm = document.getElementById('ai-chat-form');
   const userInput = document.getElementById('ai-user-input');
   const messagesList = document.getElementById('ai-messages-list');
+  const sendBtn = document.getElementById('ai-send-btn');
+  const stopBtn = document.getElementById('ai-stop-btn');
 
-  // Maintain local context history
   const chatHistory = [];
+  let abortController = null;
 
   toggleBtn.addEventListener('click', () => chatBox.classList.toggle('hidden'));
   closeBtn.addEventListener('click', () => chatBox.classList.add('hidden'));
@@ -563,8 +550,33 @@ function sendMessage(e){
     msgDiv.classList.add('message', sender);
     msgDiv.textContent = text;
     messagesList.appendChild(msgDiv);
+    scrollToBottom();
+    return msgDiv;
+  }
+
+  // Smooth Auto-Scroll Helper
+  function scrollToBottom() {
     messagesList.scrollTop = messagesList.scrollHeight;
   }
+
+  // Toggle buttons during generation
+  function setGeneratingState(isGenerating) {
+    if (isGenerating) {
+      sendBtn.style.display = 'none';
+      stopBtn.style.display = 'inline-block';
+    } else {
+      sendBtn.style.display = 'inline-block';
+      stopBtn.style.display = 'none';
+    }
+  }
+
+  // Stop button handler to abort stream
+  stopBtn.addEventListener('click', () => {
+    if (abortController) {
+      abortController.abort();
+      setGeneratingState(false);
+    }
+  });
 
   chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -575,23 +587,77 @@ function sendMessage(e){
     chatHistory.push({ role: 'user', content: text });
     userInput.value = '';
 
-    appendMessage('Thinking...', 'bot');
-    const loadingMsg = messagesList.lastElementChild;
+    const botMsgDiv = appendMessage('Thinking...', 'bot');
+    setGeneratingState(true);
+
+    abortController = new AbortController();
 
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: chatHistory })
+        body: JSON.stringify({ messages: chatHistory }),
+        signal: abortController.signal
       });
 
-      const data = await response.json();
-      const botReply = data.reply || "Sorry, I couldn't retrieve an answer.";
-      
-      loadingMsg.textContent = botReply;
-      chatHistory.push({ role: 'assistant', content: botReply });
+      if (!response.body) {
+        botMsgDiv.textContent = "Error: Streaming not supported.";
+        setGeneratingState(false);
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullReply = '';
+      let firstChunkReceived = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.replace('data: ', '').trim();
+            if (dataStr === '[DONE]') break;
+
+            try {
+              const data = JSON.parse(dataStr);
+              if (data.content) {
+                if (!firstChunkReceived) {
+                  botMsgDiv.textContent = ''; // Replace "Thinking..." on first token
+                  firstChunkReceived = true;
+                }
+                fullReply += data.content;
+                botMsgDiv.textContent = fullReply;
+                
+                // Continuous Auto-scroll during token stream
+                scrollToBottom();
+              }
+            } catch (err) {
+              // Ignore partial JSON chunks
+            }
+          }
+        }
+      }
+
+      if (fullReply) {
+        chatHistory.push({ role: 'assistant', content: fullReply });
+      }
     } catch (err) {
-      loadingMsg.textContent = "Error connecting to AI backend.";
+      if (err.name === 'AbortError') {
+        botMsgDiv.textContent += ' [Stopped]';
+        if (botMsgDiv.textContent.replace(' [Stopped]', '')) {
+          chatHistory.push({ role: 'assistant', content: botMsgDiv.textContent });
+        }
+      } else {
+        botMsgDiv.textContent = "Error connecting to AI backend.";
+      }
+    } finally {
+      setGeneratingState(false);
+      abortController = null;
     }
   });
 </script>
