@@ -545,48 +545,53 @@ function sendMessage(e){
   </style>
 
   <script>
-    const toggleBtn = document.getElementById('ai-toggle-btn');
-    const closeBtn = document.getElementById('ai-close-btn');
-    const chatBox = document.getElementById('ai-chat-box');
-    const chatForm = document.getElementById('ai-chat-form');
-    const userInput = document.getElementById('ai-user-input');
-    const messagesList = document.getElementById('ai-messages-list');
+  const toggleBtn = document.getElementById('ai-toggle-btn');
+  const closeBtn = document.getElementById('ai-close-btn');
+  const chatBox = document.getElementById('ai-chat-box');
+  const chatForm = document.getElementById('ai-chat-form');
+  const userInput = document.getElementById('ai-user-input');
+  const messagesList = document.getElementById('ai-messages-list');
 
-    toggleBtn.addEventListener('click', () => chatBox.classList.toggle('hidden'));
-    closeBtn.addEventListener('click', () => chatBox.classList.add('hidden'));
+  // Maintain local context history
+  const chatHistory = [];
 
-    function appendMessage(text, sender) {
-      const msgDiv = document.createElement('div');
-      msgDiv.classList.add('message', sender);
-      msgDiv.textContent = text;
-      messagesList.appendChild(msgDiv);
-      messagesList.scrollTop = messagesList.scrollHeight;
+  toggleBtn.addEventListener('click', () => chatBox.classList.toggle('hidden'));
+  closeBtn.addEventListener('click', () => chatBox.classList.add('hidden'));
+
+  function appendMessage(text, sender) {
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('message', sender);
+    msgDiv.textContent = text;
+    messagesList.appendChild(msgDiv);
+    messagesList.scrollTop = messagesList.scrollHeight;
+  }
+
+  chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = userInput.value.trim();
+    if (!text) return;
+
+    appendMessage(text, 'user');
+    chatHistory.push({ role: 'user', content: text });
+    userInput.value = '';
+
+    appendMessage('Thinking...', 'bot');
+    const loadingMsg = messagesList.lastElementChild;
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: chatHistory })
+      });
+
+      const data = await response.json();
+      const botReply = data.reply || "Sorry, I couldn't retrieve an answer.";
+      
+      loadingMsg.textContent = botReply;
+      chatHistory.push({ role: 'assistant', content: botReply });
+    } catch (err) {
+      loadingMsg.textContent = "Error connecting to AI backend.";
     }
-
-    chatForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const text = userInput.value.trim();
-      if (!text) return;
-
-      appendMessage(text, 'user');
-      userInput.value = '';
-
-      appendMessage('Thinking...', 'bot');
-      const loadingMsg = messagesList.lastElementChild;
-
-      try {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text })
-        });
-
-        const data = await response.json();
-        loadingMsg.textContent = data.reply || "Sorry, I couldn't retrieve an answer.";
-      } catch (err) {
-        loadingMsg.textContent = "Error connecting to AI backend.";
-      }
-    });
-  </script>
-</body>
-</html>
+  });
+</script>
