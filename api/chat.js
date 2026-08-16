@@ -4,14 +4,9 @@ export default async function handler(req, res) {
   }
 
   const { messages, message } = req.body;
-  const conversationHistory = Array.isArray(messages)
-    ? messages
+  const conversationHistory = Array.isArray(messages) 
+    ? messages 
     : [{ role: 'user', content: message }];
-
-  // Set SSE Headers for Streaming
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache, no-transform');
-  res.setHeader('Connection', 'keep-alive');
 
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -35,50 +30,14 @@ export default async function handler(req, res) {
           ...conversationHistory
         ],
         temperature: 0.7,
-        stream: true, // Enable Streaming
       }),
     });
 
-    if (!response.ok) {
-      res.write(`data: ${JSON.stringify({ error: 'Groq API request failed' })}\n\n`);
-      return res.end();
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n').filter((line) => line.trim() !== '');
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const dataStr = line.replace('data: ', '').trim();
-          if (dataStr === '[DONE]') {
-            res.write('data: [DONE]\n\n');
-            return res.end();
-          }
-
-          try {
-            const parsed = JSON.parse(dataStr);
-            const content = parsed.choices?.[0]?.delta?.content || '';
-            if (content) {
-              res.write(`data: ${JSON.stringify({ content })}\n\n`);
-            }
-          } catch (e) {
-            // Ignore partial chunk parse errors
-          }
-        }
-      }
-    }
-
-    res.write('data: [DONE]\n\n');
-    res.end();
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content || "Sorry, I couldn't process that.";
+    
+    res.status(200).json({ reply });
   } catch (error) {
-    res.write(`data: ${JSON.stringify({ error: 'Failed to fetch AI response' })}\n\n`);
-    res.end();
+    res.status(500).json({ error: 'Failed to fetch AI response' });
   }
 }
