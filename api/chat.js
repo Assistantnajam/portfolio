@@ -3,10 +3,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { message } = req.body;
+  const { message, messages } = req.body;
+  const conversationHistory = Array.isArray(messages) && messages.length > 0
+    ? messages
+    : [{ role: 'user', content: message }];
 
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
@@ -24,17 +27,37 @@ export default async function handler(req, res) {
             - Projects: LuminaList, 3D Product Showcase, Capstone Recipe App, WhatsApp Roast Bot.
             Keep responses helpful, brief, and professional.`
           },
-          { role: 'user', content: message }
+          ...conversationHistory
         ],
         temperature: 0.7,
+        stream: true
       }),
     });
 
-    const data = await response.json();
-    const reply = data.choices[0]?.message?.content || "Sorry, I couldn't process that.";
-    
-    res.status(200).json({ reply });
+    if (!groqResponse.ok) {
+      return res.status(groqResponse.status).json({ error: 'Failed to communicate with Groq API' });
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+
+    const reader = groqResponse.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      res.write(chunk);
+    }
+
+    res.end();
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch AI response' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to fetch AI response' });
+    } else {
+      res.end();
+    }
   }
 }

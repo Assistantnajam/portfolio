@@ -523,7 +523,8 @@ function sendMessage(e){
       </div>
       <form id="ai-chat-form">
         <input type="text" id="ai-user-input" placeholder="Ask something..." required />
-        <button type="submit">Send</button>
+        <button type="submit" id="ai-send-btn">Send</button>
+        <button type="button" id="ai-stop-btn" style="display: none;">Stop</button>
       </form>
     </div>
   </div>
@@ -535,13 +536,14 @@ function sendMessage(e){
     #ai-chat-box.hidden { display: none; }
     .ai-chat-header { background: #0f172a; padding: 12px; display: flex; justify-content: space-between; font-weight: bold; }
     .ai-chat-header button { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
-    #ai-messages-list { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-    .message { padding: 8px 12px; border-radius: 8px; font-size: 14px; max-width: 80%; }
+    #ai-messages-list { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
+    .message { padding: 8px 12px; border-radius: 8px; font-size: 14px; max-width: 80%; word-break: break-word; }
     .message.bot { background: #334155; align-self: flex-start; }
     .message.user { background: #2563eb; align-self: flex-end; }
-    #ai-chat-form { display: flex; padding: 8px; background: #0f172a; }
+    #ai-chat-form { display: flex; padding: 8px; background: #0f172a; gap: 6px; }
     #ai-chat-form input { flex: 1; padding: 8px; border: none; border-radius: 4px; outline: none; }
-    #ai-chat-form button { background: #2563eb; color: #fff; border: none; padding: 8px 12px; margin-left: 6px; border-radius: 4px; cursor: pointer; }
+    #ai-chat-form button { background: #2563eb; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+    #ai-stop-btn { background: #ef4444 !important; }
   </style>
 
   <script>
@@ -551,6 +553,11 @@ function sendMessage(e){
     const chatForm = document.getElementById('ai-chat-form');
     const userInput = document.getElementById('ai-user-input');
     const messagesList = document.getElementById('ai-messages-list');
+    const sendBtn = document.getElementById('ai-send-btn');
+    const stopBtn = document.getElementById('ai-stop-btn');
+
+    let currentAbortController = null;
+    const chatHistory = [];
 
     toggleBtn.addEventListener('click', () => chatBox.classList.toggle('hidden'));
     closeBtn.addEventListener('click', () => chatBox.classList.add('hidden'));
@@ -560,8 +567,20 @@ function sendMessage(e){
       msgDiv.classList.add('message', sender);
       msgDiv.textContent = text;
       messagesList.appendChild(msgDiv);
+      scrollToBottom();
+      return msgDiv;
+    }
+
+    function scrollToBottom() {
       messagesList.scrollTop = messagesList.scrollHeight;
     }
+
+    stopBtn.addEventListener('click', () => {
+      if (currentAbortController) {
+        currentAbortController.abort();
+        currentAbortController = null;
+      }
+    });
 
     chatForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -569,22 +588,72 @@ function sendMessage(e){
       if (!text) return;
 
       appendMessage(text, 'user');
+      chatHistory.push({ role: 'user', content: text });
       userInput.value = '';
 
-      appendMessage('Thinking...', 'bot');
-      const loadingMsg = messagesList.lastElementChild;
+      sendBtn.style.display = 'none';
+      stopBtn.style.display = 'inline-block';
+
+      const botMsg = appendMessage('', 'bot');
+      currentAbortController = new AbortController();
 
       try {
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text })
+          body: JSON.stringify({ messages: chatHistory }),
+          signal: currentAbortController.signal
         });
 
-        const data = await response.json();
-        loadingMsg.textContent = data.reply || "Sorry, I couldn't retrieve an answer.";
+        if (!response.ok) {
+          botMsg.textContent = "Error connecting to backend.";
+          return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let fullReply = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const dataStr = line.replace('data: ', '').trim();
+              if (dataStr === '[DONE]') break;
+
+              try {
+                const parsed = JSON.parse(dataStr);
+                const content = parsed.choices?.[0]?.delta?.content || '';
+                fullReply += content;
+                botMsg.textContent = fullReply;
+                scrollToBottom();
+              } catch (err) {
+                // Ignore incomplete JSON chunks
+              }
+            }
+          }
+        }
+
+        if (fullReply) {
+          chatHistory.push({ role: 'assistant', content: fullReply });
+        }
       } catch (err) {
-        loadingMsg.textContent = "Error connecting to AI backend.";
+        if (err.name === 'AbortError') {
+          if (!botMsg.textContent) {
+            botMsg.textContent = "[Generation stopped]";
+          }
+        } else {
+          botMsg.textContent = "Error connecting to AI backend.";
+        }
+      } finally {
+        currentAbortController = null;
+        sendBtn.style.display = 'inline-block';
+        stopBtn.style.display = 'none';
       }
     });
   </script>
