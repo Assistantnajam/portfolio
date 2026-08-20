@@ -1,12 +1,27 @@
 export default async function handler(req, res) {
+  // Set CORS headers so your frontend can communicate with this API route without blockages
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { message, messages } = req.body;
+  // Check if the Groq API key is configured in Environment Variables
+  if (!process.env.GROQ_API_KEY) {
+    return res.status(500).json({ error: 'GROQ_API_KEY is missing in environment variables.' });
+  }
+
+  const { message, messages } = req.body || {};
   const conversationHistory = Array.isArray(messages) && messages.length > 0
     ? messages
-    : [{ role: 'user', content: message }];
+    : [{ role: 'user', content: message || '' }];
 
   try {
     const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -35,7 +50,9 @@ export default async function handler(req, res) {
     });
 
     if (!groqResponse.ok) {
-      return res.status(groqResponse.status).json({ error: 'Failed to communicate with Groq API' });
+      const errorText = await groqResponse.text();
+      console.error('Groq API Error Details:', errorText);
+      return res.status(groqResponse.status).json({ error: 'Failed to communicate with Groq API', details: errorText });
     }
 
     res.setHeader('Content-Type', 'text/event-stream');
@@ -54,6 +71,7 @@ export default async function handler(req, res) {
 
     res.end();
   } catch (error) {
+    console.error('Internal Server Error:', error);
     if (!res.headersSent) {
       res.status(500).json({ error: 'Failed to fetch AI response' });
     } else {

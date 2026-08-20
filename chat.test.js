@@ -8,6 +8,9 @@ global.fetch = vi.fn();
 
 describe('AI Chat Assistant & Form Component Tests', () => {
   beforeEach(() => {
+    // Reset mocks before each test
+    vi.clearAllMocks();
+
     // Set up a clean DOM environment for each test
     document.body.innerHTML = `
       <!-- Chat Widget UI -->
@@ -50,7 +53,6 @@ describe('AI Chat Assistant & Form Component Tests', () => {
   // Test 2: User typing and submitting message
   it('2. renders user message in the chat container upon form submission', () => {
     const input = screen.getByRole('textbox', { name: /ask something/i });
-    const form = document.getElementById('chat-form');
     const messagesContainer = screen.getByRole('log');
 
     fireEvent.change(input, { target: { value: 'Hello Najam' } });
@@ -85,8 +87,12 @@ describe('AI Chat Assistant & Form Component Tests', () => {
 
     const messagesContainer = screen.getByRole('log');
 
-    // Simulate API fetch trigger
-    const res = await fetch('/api/chat');
+    // Simulate API fetch trigger with POST options matching your frontend
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Hello' }),
+    });
     const data = await res.json();
 
     const aiBubble = document.createElement('div');
@@ -94,7 +100,7 @@ describe('AI Chat Assistant & Form Component Tests', () => {
     aiBubble.textContent = data.reply;
     messagesContainer.appendChild(aiBubble);
 
-    expect(fetch).toHaveBeenCalledWith('/api/chat');
+    expect(fetch).toHaveBeenCalledWith('/api/chat', expect.any(Object));
     expect(messagesContainer).toHaveTextContent("Hello! I am Syed Najam's AI Assistant.");
   });
 
@@ -107,7 +113,11 @@ describe('AI Chat Assistant & Form Component Tests', () => {
     const statusBox = document.getElementById('chat-status');
 
     try {
-      await fetch('/api/chat');
+      await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'Hello' }),
+      });
     } catch (err) {
       statusBox.textContent = 'Failed to connect. Please try again.';
       const errBubble = document.createElement('div');
