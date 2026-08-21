@@ -23,4 +23,4 @@ jobs:
         run: npm install
 
       - name: Run Vitest Suite
-        run: npx vitest run --pool=threads
+        run: npm test 

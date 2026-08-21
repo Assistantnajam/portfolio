@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run --pool=threads"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",
