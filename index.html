@@ -196,6 +196,8 @@ footer{border-top:1px solid #142235;padding:25px 0;text-align:center;color:#8090
 </style>
 </head>
 
+
+
 <body>
 
 <nav>
@@ -657,5 +659,13 @@ function sendMessage(e){
       }
     });
   </script>
+  
+<script type="module">
+  import { inject } from '@vercel/analytics';
+  inject();
+</script>
+
+
+
 </body>
 </html>
